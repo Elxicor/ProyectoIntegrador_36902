@@ -391,6 +391,8 @@ Las variables `authUrl` y `stegoUrl` corresponden a la publicación local por de
 
 Los scripts PowerShell se ejecutan **desde la raíz del repositorio**, con Docker iniciado. Los `.ps1` utilizan `curl.exe` y funcionan con Windows PowerShell 5.1 o PowerShell 7. El login tiene un límite de cinco intentos por minuto; si encadena muchas pruebas y aparece **429**, deje transcurrir un minuto y reintente.
 
+`test-all.ps1` respeta esa ventana antes de T08. `test-fail-closed.ps1` muestra el HTTP real del login previo y hace como máximo un reintento después de 65 segundos, exclusivamente si AUTH responde 429.
+
 | ID | Cómo ejecutar | Respuesta o evidencia que debe observar |
 |---|---|---|
 | **T01** | `.\scripts\test-independence.ps1` | Detiene STEGO; AUTH sigue respondiendo 200; restaura STEGO |
@@ -417,7 +419,7 @@ Los scripts PowerShell se ejecutan **desde la raíz del repositorio**, con Docke
 .\scripts\test-fail-closed.ps1       # T08, detiene y restaura AUTH
 ```
 
-Para ejecutar los grupos en un orden controlado, con dos pausas de 65 segundos para respetar el rate limit del login:
+Para ejecutar los grupos en un orden controlado, con pausas de 65 segundos para respetar el rate limit del login:
 
 ```powershell
 .\scripts\test-all.ps1
