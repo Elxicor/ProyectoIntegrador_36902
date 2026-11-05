@@ -1,0 +1,540 @@
+openapi: 3.0.3
+info:
+  title: AUTH API
+  version: '1.0'
+  description: Servicio de identidad, JWT RS256 y autorización dinámica RBAC.
+servers:
+- url: https://localhost:3001
+security:
+- BearerAuth: []
+tags:
+- name: Autenticación
+- name: Usuarios
+- name: Roles
+- name: Asignaciones
+- name: Integración
+paths:
+  /api/auth/login:
+    post:
+      tags:
+      - Autenticación
+      summary: Autenticar identidad y emitir JWT RS256
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          description: Demasiados intentos de login
+        '201':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+  /api/auth/profile:
+    get:
+      tags:
+      - Autenticación
+      summary: Consultar identidad autenticada
+      responses:
+        '200':
+          description: Claims validados de la identidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSubject'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/auth/logout:
+    post:
+      tags:
+      - Autenticación
+      summary: Invalidar versiones previas de los JWT del usuario
+      responses:
+        '201':
+          description: Cierre de sesión
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logged_out:
+                    type: boolean
+                    example: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/users:
+    post:
+      tags:
+      - Usuarios
+      summary: Crear usuario (ADMIN)
+      x-required-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUser'
+      responses:
+        '201':
+          description: Usuario creado
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Identidad duplicada
+    get:
+      tags:
+      - Usuarios
+      summary: Listar usuarios (ADMIN)
+      x-required-roles:
+      - ADMIN
+      responses:
+        '200':
+          description: Lista de identidades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/users/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    get:
+      tags:
+      - Usuarios
+      summary: Consultar usuario (ADMIN)
+      x-required-roles:
+      - ADMIN
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No existe
+    patch:
+      tags:
+      - Usuarios
+      summary: Modificar usuario (ADMIN)
+      x-required-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Usuario modificado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No existe
+  /api/roles:
+    post:
+      tags:
+      - Roles
+      summary: Crear rol (ADMIN)
+      x-required-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRole'
+      responses:
+        '201':
+          description: Rol creado
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Rol duplicado
+    get:
+      tags:
+      - Roles
+      summary: Listar roles (ADMIN)
+      x-required-roles:
+      - ADMIN
+      responses:
+        '200':
+          description: Roles disponibles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/roles/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    patch:
+      tags:
+      - Roles
+      summary: Modificar rol (ADMIN)
+      x-required-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRole'
+      responses:
+        '200':
+          description: Rol actualizado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: No existe
+  /api/user-roles:
+    post:
+      tags:
+      - Asignaciones
+      summary: Asignar rol a usuario (ADMIN)
+      x-required-roles:
+      - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssignment'
+      responses:
+        '201':
+          description: Asignación creada
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Relación duplicada
+    get:
+      tags:
+      - Asignaciones
+      summary: Listar relaciones usuario-rol (ADMIN)
+      x-required-roles:
+      - ADMIN
+      responses:
+        '200':
+          description: Lista de asignaciones
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/user-roles/{id}:
+    parameters:
+    - $ref: '#/components/parameters/id'
+    delete:
+      tags:
+      - Asignaciones
+      summary: Retirar una asignación (ADMIN)
+      x-required-roles:
+      - ADMIN
+      responses:
+        '200':
+          description: Relación eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Asignación inexistente
+  /internal/authorization/check:
+    post:
+      tags:
+      - Integración
+      summary: Comprobar permiso vigente para STEGO
+      security:
+      - ServiceToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequest'
+      responses:
+        '201':
+          description: Decisión de autorización basada en asignaciones actuales
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationDecision'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ServiceToken:
+      type: apiKey
+      in: header
+      name: x-service-token
+  parameters:
+    id:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Datos inválidos
+    Unauthorized:
+      description: Token o sesión no válida
+    Forbidden:
+      description: Permiso insuficiente
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+      - identity
+      - password
+      properties:
+        identity:
+          type: string
+          example: analyst
+        password:
+          type: string
+          format: password
+    LoginResponse:
+      type: object
+      required:
+      - access_token
+      - token_type
+      - expires_in
+      properties:
+        access_token:
+          type: string
+          description: JWT RS256 sin roles
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: string
+          example: 15m
+    TokenSubject:
+      type: object
+      properties:
+        sub:
+          type: string
+          format: uuid
+        username:
+          type: string
+        typ:
+          type: string
+          example: access
+        tokenVersion:
+          type: integer
+        iss:
+          type: string
+        aud:
+          type: string
+        iat:
+          type: integer
+        exp:
+          type: integer
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        estado:
+          type: boolean
+        tokenVersion:
+          type: integer
+    CreateUser:
+      type: object
+      required:
+      - cedula
+      - nombres
+      - apellidos
+      - fechaNacimiento
+      - username
+      - email
+      - password
+      properties: &id001
+        cedula:
+          type: string
+          pattern: ^[0-9]{10}$
+        nombres:
+          type: string
+          minLength: 2
+          maxLength: 100
+        apellidos:
+          type: string
+          minLength: 2
+          maxLength: 100
+        fechaNacimiento:
+          type: string
+          format: date
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 12
+        estado:
+          type: boolean
+    UpdateUser:
+      type: object
+      properties: *id001
+      description: Todos los campos son opcionales en PATCH.
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        rol:
+          type: string
+          enum:
+          - ADMIN
+          - ANALYST
+          - USER
+        description:
+          type: string
+        estado:
+          type: boolean
+    CreateRole:
+      type: object
+      required:
+      - rol
+      - description
+      properties:
+        rol:
+          type: string
+          enum:
+          - ADMIN
+          - ANALYST
+          - USER
+        description:
+          type: string
+          minLength: 1
+          maxLength: 255
+        estado:
+          type: boolean
+    UpdateRole:
+      type: object
+      properties:
+        rol:
+          type: string
+          enum:
+          - ADMIN
+          - ANALYST
+          - USER
+        description:
+          type: string
+        estado:
+          type: boolean
+    CreateAssignment:
+      type: object
+      required:
+      - userId
+      - roleId
+      properties:
+        userId:
+          type: string
+          format: uuid
+        roleId:
+          type: string
+          format: uuid
+    AuthorizationRequest:
+      type: object
+      required:
+      - subject_token
+      - action
+      properties:
+        subject_token:
+          type: string
+          description: JWT del usuario
+        action:
+          type: string
+          enum:
+          - steganography.analyze
+          - steganography.result.read
+        resource_id:
+          type: string
+          nullable: true
+    AuthorizationDecision:
+      type: object
+      required:
+      - subject_id
+      - action
+      - allowed
+      - reason
+      - roles
+      properties:
+        subject_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+        allowed:
+          type: boolean
+        reason:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string

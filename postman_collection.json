@@ -1,0 +1,1223 @@
+{
+  "info": {
+    "name": "AUTH–STEGO | Sustentación de seguridad",
+    "description": "AUTH–STEGO. Colección de evaluación: login, gestión N:M, JWT, análisis de imágenes, autorización, revocación, pruebas de archivos y consultas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01. Sesiones",
+      "item": [
+        {
+          "name": "Login ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 y JWT',()=>pm.response.to.have.status(201));",
+                  "const j=pm.response.json(); pm.environment.set('adminJwt',j.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identity\":\"{{adminIdentity}}\",\"password\":\"{{adminPassword}}\"}"
+            },
+            "url": "{{authUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login ANALYST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 y JWT',()=>pm.response.to.have.status(201));",
+                  "pm.environment.set('analystJwt',pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identity\":\"{{analystIdentity}}\",\"password\":\"{{analystPassword}}\"}"
+            },
+            "url": "{{authUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login USER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 y JWT',()=>pm.response.to.have.status(201));",
+                  "pm.environment.set('userJwt',pm.response.json().access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"identity\":\"{{userIdentity}}\",\"password\":\"{{userPassword}}\"}"
+            },
+            "url": "{{authUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Inspeccionar JWT (RS256, sin roles)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const t=pm.environment.get('analystJwt'); const [h,p]=t.split('.');",
+                  "const d=s=>JSON.parse(atob(s.replace(/-/g,'+').replace(/_/g,'/'))); const header=d(h), payload=d(p);",
+                  "console.log({header,payload}); pm.test('alg RS256',()=>pm.expect(header.alg).to.eql('RS256'));",
+                  "pm.test('payload sin roles',()=>pm.expect(payload).not.to.have.property('roles'));",
+                  "pm.test('claims de seguridad',()=>{pm.expect(payload).to.include.all.keys('sub','exp','iss','aud','typ','tokenVersion');});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/auth/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Firma y claims",
+      "item": [
+        {
+          "name": "STEGO sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "JWT manipulado (username + rol falso) → 401",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t=pm.environment.get('analystJwt').split('.'); const b=s=>JSON.parse(atob(s.replace(/-/g,'+').replace(/_/g,'/')));",
+                  "const p=b(t[1]); p.username='atacante'; p.roles=['ADMIN'];",
+                  "const enc=o=>btoa(JSON.stringify(o)).replace(/=/g,'').split('+').join('-').split('/').join('_');",
+                  "pm.variables.set('tamperedJwt',t[0]+'.'+enc(p)+'.'+t[2]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 por firma inválida',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tamperedJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "JWT expirado → 401",
+          "description": "Genere expiredJwt localmente con auth/scripts/create-expired-token.mjs; nunca use jwt.io.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{expiredJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. RBAC dinámico",
+      "item": [
+        {
+          "name": "USER analiza → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 por rol vigente',()=>pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "ANALYST analiza → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201',()=>pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('analystAnalysisId',pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{stegoPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "ADMIN analiza → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201',()=>pm.response.to.have.status(201));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if(pm.response.code===201) pm.environment.set('adminAnalysisId',pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "Retirar asignación ANALYST",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if(!pm.environment.get('analystAssignmentId')){pm.sendRequest({url:pm.environment.get('authUrl')+'/api/user-roles',method:'GET',header:{Authorization:'Bearer '+pm.environment.get('adminJwt')}},(err,res)=>{if(err)throw err;const a=res.json().find(x=>x.user?.username==='analyst'&&x.role?.rol==='ANALYST');if(!a)throw new Error('No se encontró la asignación ANALYST');pm.environment.set('analystAssignmentId',a.id);});}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('asignación retirada',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/user-roles/{{analystAssignmentId}}"
+          }
+        },
+        {
+          "name": "Revocado: reutilizar mismo JWT ANALYST → 403",
+          "description": "No vuelva a iniciar sesión entre retirar la asignación y esta solicitud.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 inmediato',()=>pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Logout, propiedad y disponibilidad",
+      "item": [
+        {
+          "name": "Logout ANALYST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('logout correcto',()=>pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/auth/logout"
+          }
+        },
+        {
+          "name": "Reutilizar JWT después de logout → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 tokenVersion',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "Consultar resultado ajeno → 403",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.sendRequest({url:pm.environment.get('authUrl')+'/api/auth/login',method:'POST',header:{'Content-Type':'application/json'},body:{mode:'raw',raw:JSON.stringify({identity:'analyst',password:'Analyst-Pass-2026!'})}},(err,res)=>{if(err)throw err;if(res.code!==201)throw new Error('No se pudo renovar analystJwt');pm.environment.set('analystJwt',res.json().access_token);});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('403 IDOR impedido',()=>pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{analystJwt}}"
+              }
+            ],
+            "url": "{{stegoUrl}}/api/steganography/results/{{adminAnalysisId}}"
+          },
+          "description": "Primero ejecute ADMIN analiza para guardar adminAnalysisId. Luego consulte ese ID con JWT ANALYST para verificar 403 por propiedad."
+        },
+        {
+          "name": "Fail closed (AUTH detenido) → 503",
+          "description": "Caso manual: ejecute docker compose stop auth, establezca runFailClosed=true, envíe esta solicitud y luego docker compose start auth. Newman la omite salvo que esa variable sea true.",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if(pm.environment.get('runFailClosed')!=='true')pm.execution.skipRequest();"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('503 sin autoridad',()=>pm.response.to.have.status(503));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Archivos T10",
+      "item": [
+        {
+          "name": "Firma/extensión incompatible → 415",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('415',()=>pm.response.to.have.status(415));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{fakePng}}",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "PNG corrupto/truncado → 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('422',()=>pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{corruptPng}}",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        },
+        {
+          "name": "Archivo demasiado grande → 413",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('413',()=>pm.response.to.have.status(413));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{oversizedPng}}",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{stegoUrl}}/api/steganography/analyze"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Inspección operativa",
+      "description": "Los logs y PostgreSQL se consultan localmente: docker compose logs --tail 100 auth stego; docker compose exec auth-db psql -U auth -d auth -c \"SELECT u.username,r.rol FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id;\"",
+      "item": []
+    },
+    {
+      "name": "06. Salud y perfil",
+      "item": [
+        {
+          "name": "Salud AUTH",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{authUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('AUTH 200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Salud STEGO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{stegoUrl}}/api/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('STEGO 200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil ADMIN",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/auth/profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Perfil 200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil USER",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/auth/profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Perfil 200',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login incorrecto → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identity\": \"admin\",\n  \"password\": \"Password-incorrecto\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('401 por credenciales',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07. CRUD usuarios, roles y N:M",
+      "item": [
+        {
+          "name": "Listar usuarios (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 usuarios',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200){const u=pm.response.json().find(x=>x.username==='analyst');if(u)pm.environment.set('analystUserId',u.id);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/roles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 roles',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200){const r=pm.response.json().find(x=>x.rol==='ANALYST');if(r)pm.environment.set('analystRoleId',r.id);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar asignaciones (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/user-roles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 asignaciones',()=>pm.response.to.have.status(200));",
+                  "if(pm.response.code===200){const a=pm.response.json().find(x=>x.user?.username==='analyst' && x.role?.rol==='ANALYST');if(a)pm.environment.set('analystAssignmentId',a.id);}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear usuario evaluación (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"3333333333\",\n  \"nombres\": \"Usuario\",\n  \"apellidos\": \"Evaluacion\",\n  \"fechaNacimiento\": \"1995-01-01\",\n  \"username\": \"evaluador_demo\",\n  \"email\": \"evaluador_demo@example.local\",\n  \"password\": \"Evaluador-Pass-2026!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 usuario, o 409 si ya existe',()=>pm.expect([201,409]).to.include(pm.response.code));",
+                  "if(pm.response.code===201)pm.environment.set('evaluatorUserId',pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "description": "En nuevas instalaciones devuelve 201; ejecuciones repetidas devuelven 409 por unicidad."
+        },
+        {
+          "name": "Consultar usuario por UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/users/{{analystUserId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 usuario',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar usuario de evaluación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/users/{{evaluatorUserId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombres\": \"Usuario actualizado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if(!pm.environment.get('evaluatorUserId')){pm.sendRequest({url:pm.environment.get('authUrl')+'/api/users',method:'GET',header:{Authorization:'Bearer '+pm.environment.get('adminJwt')}},(err,res)=>{if(err)throw err;const u=res.json().find(x=>x.username==='evaluador_demo');if(!u)throw new Error('No se encontró evaluador_demo');pm.environment.set('evaluatorUserId',u.id);});}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 actualización',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar descripción del rol ANALYST",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/roles/{{analystRoleId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Análisis de imágenes LSB\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 actualización de rol',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asignar ANALYST al usuario de evaluación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{evaluatorUserId}}\",\n  \"roleId\": \"{{analystRoleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 asociación o 409 existente',()=>pm.expect([201,409]).to.include(pm.response.code));",
+                  "if(pm.response.code===201)pm.environment.set('evaluatorAssignmentId',pm.response.json().id);else if(pm.response.code===409){pm.sendRequest({url:pm.environment.get('authUrl')+'/api/user-roles',method:'GET',header:{Authorization:'Bearer '+pm.environment.get('adminJwt')}},(err,res)=>{if(err)throw err;const a=res.json().find(x=>x.userId===pm.environment.get('evaluatorUserId')&&x.roleId===pm.environment.get('analystRoleId'));if(!a)throw new Error('No se encontró la asignación de evaluación');pm.environment.set('evaluatorAssignmentId',a.id);});}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Repetir asignación → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{authUrl}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{evaluatorUserId}}\",\n  \"roleId\": \"{{analystRoleId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('409 duplicado',()=>pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar asignación del usuario de evaluación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{authUrl}}/api/user-roles/{{evaluatorAssignmentId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 relación eliminada',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08. Práctica de esteganografía",
+      "item": [
+        {
+          "name": "Analizar imagen original (sin indicios)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{stegoUrl}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{normalPng}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('lastAnalysisId',pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar imagen LSB (sospechosa)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{stegoUrl}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "{{stegoPng}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('lastStegoAnalysisId',pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar imagen no concluyente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{stegoUrl}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/stego/lsb-inconclusive-pattern.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "if(pm.response.code===201) pm.environment.set('lastInconclusiveAnalysisId',pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Recuperar resultado almacenado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminJwt}}"
+              }
+            ],
+            "url": "{{stegoUrl}}/api/steganography/results/{{lastAnalysisId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 resultado persistido',()=>pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

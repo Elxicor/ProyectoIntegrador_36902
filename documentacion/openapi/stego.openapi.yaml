@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: STEGO API
+  version: '1.0'
+  description: API de análisis estadístico LSB para archivos PNG.
+servers:
+  - url: http://localhost:3002
+security:
+  - BearerAuth: []
+tags:
+  - name: Esteganografía
+paths:
+  /api/steganography/analyze:
+    post:
+      tags: [Esteganografía]
+      summary: Analizar imagen PNG con autorización vigente de AUTH
+      description: |
+        Requiere ADMIN o ANALYST. Archivo PNG de hasta 5 MiB, 16 millones
+        de píxeles. La clasificación es indicativa y no constituye certeza
+        de contenido oculto. La autorización es consultada por operación.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Imagen PNG
+      responses:
+        '201':
+          description: Análisis realizado y persistido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Analysis' }
+        '400': { description: Falta el archivo de entrada }
+        '401': { description: JWT ausente, inválido o sesión revocada }
+        '403': { description: El usuario carece del permiso de análisis }
+        '413': { description: Archivo demasiado grande }
+        '415': { description: Tipo, firma, extensión o MIME inválidos }
+        '422': { description: Imagen corrupta o dimensiones rechazadas }
+        '503': { description: AUTH no puede proporcionar autorización verificable }
+  /api/steganography/results/{id}:
+    get:
+      tags: [Esteganografía]
+      summary: Consultar resultado autorizado por propiedad o rol ADMIN
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Resultado de un análisis
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Analysis' }
+        '401': { description: JWT ausente, inválido o sesión revocada }
+        '403': { description: Permiso insuficiente o resultado ajeno }
+        '404': { description: Análisis inexistente }
+        '503': { description: AUTH no puede proporcionar autorización verificable }
+components:
+  securitySchemes:
+    BearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Analysis:
+      type: object
+      required: [id, user_id, filename, sha256, technique, status, indicators, action, limitations, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        filename: { type: string }
+        sha256: { type: string, description: Huella SHA-256 de los bytes recibidos }
+        technique: { type: string, example: lsb_statistical_analysis }
+        status: { type: string, enum: [sin_indicios, no_concluyente, sospechoso] }
+        indicators: { $ref: '#/components/schemas/Indicators' }
+        action: { type: string, enum: [advertencia, cuarentena] }
+        limitations: { type: string }
+        created_at: { type: string, format: date-time }
+    Indicators:
+      type: object
+      properties:
+        width: { type: integer }
+        height: { type: integer }
+        channels: { type: integer }
+        sample_bits: { type: integer }
+        lsb_one_ratio: { type: number, format: double }
+        transition_rate: { type: number, format: double }
+        chi_square: { type: number, format: double }
+        anomaly_score: { type: number, format: double }
+        threshold: { type: number, example: 0.97 }

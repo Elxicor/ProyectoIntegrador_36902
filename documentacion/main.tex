@@ -1,0 +1,644 @@
+\documentclass[11pt,a4paper,oneside]{article}
+\usepackage[spanish,es-tabla,es-noquoting]{babel}
+\usepackage{fontspec}
+\setmainfont{TeXGyreTermes}
+\setsansfont{TeXGyreHeros}
+\setmonofont{DejaVu Sans Mono}[Scale=0.84]
+\usepackage[a4paper,margin=2.5cm,headheight=23pt]{geometry}
+\usepackage{microtype,setspace,ragged2e}
+\setstretch{1.18}
+\usepackage[table]{xcolor}
+\definecolor{espegreen}{RGB}{0,105,65}
+\definecolor{espebright}{RGB}{88,177,97}
+\definecolor{espeink}{RGB}{30,54,48}
+\definecolor{palegreen}{RGB}{237,247,239}
+\definecolor{paleblue}{RGB}{237,244,250}
+\definecolor{verde}{RGB}{0,105,65}
+\definecolor{verdeclaro}{RGB}{237,247,239}
+\definecolor{azul}{RGB}{30,54,48}
+\definecolor{gris}{RGB}{72,86,81}
+\definecolor{grisclaro}{RGB}{247,249,248}
+\definecolor{linea}{RGB}{203,220,211}
+\usepackage{graphicx,float,caption,subcaption}
+\captionsetup{font=small,labelfont={bf,color=espeink},justification=centering,skip=7pt}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage{pdflscape,afterpage}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.5em,topsep=3pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=1.6em,topsep=3pt,itemsep=2pt}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,shapes.geometric,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{fancyhdr,lastpage,titlesec,colortbl}
+\usepackage[most]{tcolorbox}
+\usepackage{fvextra}
+\usepackage{url,hyperref}
+\hypersetup{colorlinks=true,linkcolor=espegreen,urlcolor=espeink,citecolor=espeink,
+ pdfauthor={Danna Andrade, David Pilaguano, Erick Tufiño},
+ pdftitle={Proyecto Integrador del Primer Parcial - Backend AUTH y STEGO},
+ pdfsubject={Desarrollo de Software Seguro}}
+\setlength{\parindent}{1.1em}
+\setlength{\parskip}{0.26em}
+\setlength{\emergencystretch}{2em}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{P}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcommand{\code}[1]{{\footnotesize\texttt{\detokenize{#1}}}}
+\newtcolorbox{notatecnica}[1][]{enhanced,colback=palegreen,colframe=linea,boxrule=.55pt,arc=1mm,
+ left=3mm,right=3mm,top=2mm,bottom=2mm,#1}
+\titleformat{\section}{\Large\bfseries\color{espegreen}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{espeink}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{espegreen}}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.5em}{0.75em}
+\titlespacing*{\subsection}{0pt}{1.15em}{0.55em}
+\titlespacing*{\subsubsection}{0pt}{1.10em}{0.4em}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\footnotesize\color{espeink} Desarrollo de Software Seguro}
+\fancyhead[R]{\footnotesize\color{espeink} AUTH y STEGO}
+\fancyfoot[C]{\footnotesize\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{espegreen}\leaders\hrule height \headrulewidth\hfill}}
+\DefineVerbatimEnvironment{codetext}{Verbatim}{fontsize=\scriptsize,breaklines=true,
+ breakanywhere=true,frame=single,framesep=2.7mm,rulecolor=\color{linea}}
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+ \fill[espegreen] (current page.north east) rectangle ([xshift=-1.25cm]current page.south east);
+ \fill[espebright] ([xshift=-1.25cm]current page.north east) rectangle ([xshift=-1.57cm]current page.south east);
+ \fill[espegreen] (current page.north west) rectangle ([yshift=-0.45cm]current page.north east);
+ \node[rotate=270,anchor=center,text=white,font=\bfseries\fontsize{32}{34}\selectfont]
+  at ([xshift=-0.65cm]current page.east) {2026};
+ \node[rotate=90,anchor=center,text=espeink,font=\small\bfseries]
+  at ([xshift=1.2cm]current page.west) {INGENIERÍA DE SOFTWARE};
+\end{tikzpicture}
+\begin{center}
+\vspace*{1.08cm}
+{\Large\bfseries UNIVERSIDAD DE LAS FUERZAS ARMADAS -- ESPE}\\[0.25em]
+{\normalsize Departamento de Ciencias de la Computación}\\[0.47cm]
+\includegraphics[width=0.20\textwidth]{recursos/escudo_espe.png}\\[0.28cm]
+{\large\bfseries Ingeniería de Software}\\[0.52cm]
+{\color{espegreen}\rule{0.77\textwidth}{1.3pt}}\\[0.42cm]
+{\LARGE\bfseries PROYECTO INTEGRADOR\\[0.2cm] DEL PRIMER PARCIAL}\\[0.35cm]
+{\Large Autenticación JWT/RBAC\\ y detección de esteganografía}\\[0.42cm]
+{\color{espegreen}\rule{0.77\textwidth}{1.3pt}}\\[0.68cm]
+\begin{minipage}{0.76\textwidth}\small\renewcommand{\arraystretch}{1.55}
+\begin{tabularx}{\linewidth}{>{\bfseries}p{3.1cm}Y}
+Asignatura & Desarrollo de Software Seguro\\
+Actividad & Proyecto Integrador del Primer Parcial\\
+Producto & Backend V1: AUTH y STEGO\\
+Modalidad & Trabajo grupal\\
+Integrantes & Danna Andrade\\
+ & David Pilaguano\\
+ & Erick Tufiño\\
+Docente & Geovanny Cudco\\
+Fecha de entrega & 4 de noviembre de 2026\\
+\end{tabularx}
+\end{minipage}
+\end{center}
+\vfill
+\end{titlepage}
+\pagenumbering{roman}
+\section*{Resumen}
+Este informe presenta el diseño, la implementación y la evaluación de un backend compuesto por dos microservicios REST independientes. AUTH administra las identidades y los roles mediante PostgreSQL, almacena las contraseñas utilizando Argon2id, emite JSON Web Tokens firmados con RS256 y toma decisiones de autorización según las asignaciones vigentes. STEGO recibe imágenes PNG, verifica la autenticidad de los tokens, obtiene una decisión de autorización actual desde AUTH y aplica un análisis estadístico sobre los bits menos significativos de los canales RGB. Los resultados se registran en SQLite junto con indicadores, hash SHA-256 y política asociada.
+
+La solución se ejecuta con Docker Compose y separa el procesamiento de imágenes de la persistencia de identidades. La evaluación incluye doce escenarios funcionales y de seguridad, pruebas adicionales con archivos no válidos, revisión de auditoría y contraste entre muestras normales e imágenes modificadas mediante LSB. Los ensayos muestran rechazo de accesos no autorizados y también evidencian falsos positivos y negativos que delimitan la capacidad del detector.
+
+\textbf{Palabras clave:} microservicios, JWT, RBAC, autenticación, LSB, esteganografía, seguridad de aplicaciones.
+\newpage
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+\section{Introducción}
+La primera entrega del Proyecto Integrador comprende los servicios de identidad, autorización y evaluación inicial de imágenes de una futura plataforma de comunicación segura. El alcance se limita deliberadamente al backend. La autenticación comprueba quién solicita una operación; la autorización establece si ese sujeto conserva el permiso necesario en el momento de realizarla.
+
+La separación entre AUTH y STEGO evita que el servicio que procesa archivos administre directamente las identidades o consulte las tablas de usuarios. Esta arquitectura permite reproducir cambios de permisos, rechazar sesiones inválidas y comprobar el comportamiento ante fallas del servicio de autorización. La detección de posibles datos ocultos se aborda como un análisis estadístico real, no como una clasificación simulada.
+
+\subsection{Objetivo general}
+Implementar y evaluar dos microservicios REST independientes, uno para autenticación y autorización mediante JWT y RBAC dinámico y otro para detección estadística de posibles modificaciones esteganográficas en imágenes, con controles de acceso y pruebas reproducibles.
+
+\subsection{Objetivos específicos}
+\begin{itemize}
+\item Modelar y persistir la relación muchos a muchos entre usuarios y roles, con integridad referencial y unicidad.
+\item Emitir JWT firmados, validar sus atributos y resolver los permisos a partir del estado actual de PostgreSQL.
+\item Integrar AUTH y STEGO mediante un canal interno protegido y una decisión de autorización por operación.
+\item Validar y procesar imágenes PNG mediante indicadores estadísticos LSB y registrar los resultados.
+\item Comprobar respuestas adversas, revocación de permisos, aislamiento de datos y auditoría mediante pruebas ejecutables.
+\end{itemize}
+
+\subsection{Alcance}
+Se incluyen los microservicios AUTH y STEGO, sus persistencias, las APIs REST, scripts de configuración, Docker Compose, colección de pruebas e imágenes de referencia. No se implementan interfaz gráfica, chat, mensajería, cifrado extremo a extremo de conversaciones ni administración de salas. El detector no extrae mensajes ni demuestra de forma concluyente su existencia.
+
+\section{Arquitectura y límites de confianza}
+\subsection{Separación de servicios}
+AUTH y STEGO son aplicaciones NestJS distintas: disponen de código, dependencias, Dockerfile, puerto, ejecución y responsabilidades diferenciadas. Docker Compose incorpora un contenedor de PostgreSQL como infraestructura complementaria. La persistencia de STEGO se realiza en SQLite con un volumen propio.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Latex, font=\small\sffamily, node distance=10mm]
+  \tikzset{box/.style={draw=verde,thick,rounded corners=2mm,fill=verdeclaro,align=center,minimum height=13mm,text width=3.5cm}, db/.style={cylinder,shape border rotate=90,aspect=.27,draw=azul,fill=grisclaro,minimum height=10mm,minimum width=2.7cm,align=center},arr/.style={->,thick,draw=azul}}
+  \node[box,fill=grisclaro,draw=gris,text width=3cm] (cli) at (0,0) {Cliente REST\\Postman / cURL};
+  \node[box] (auth) at (5,1.55) {AUTH \textbar{} :3001\\Identidad y RBAC\\JWT RS256};
+  \node[box] (stego) at (5,-1.65) {STEGO \textbar{} :3002\\Validación PNG\\Estegoanálisis LSB};
+  \node[db] (pg) at (10.05,1.55) {PostgreSQL\\users, roles, user\_roles};
+  \node[db] (sq) at (10.05,-1.65) {SQLite\\analyses};
+  \draw[arr] (cli.north east) -- node[above,sloped,font=\scriptsize]{HTTPS: login} (auth.west);
+  \draw[arr] (cli.south east) -- node[below,sloped,font=\scriptsize]{PNG + JWT} (stego.west);
+  \draw[arr] (stego.north) -- (auth.south);\node[font=\scriptsize,align=left,text=azul] at (7.55,0) {HTTPS / CA\\credencial de servicio};
+  \draw[arr] (auth.east)--node[above,font=\scriptsize]{TypeORM}(pg.west);
+  \draw[arr] (stego.east)--node[above,font=\scriptsize]{SQL local}(sq.west);
+  \begin{scope}[on background layer]
+    \node[draw=verde!55,dashed,rounded corners=3mm,inner sep=6mm,fit=(auth)(pg),label={[font=\scriptsize\sffamily\color{verde}]above:Dominio de identidad}] {};
+    \node[draw=azul!45,dashed,rounded corners=3mm,inner sep=6mm,fit=(stego)(sq),label={[font=\scriptsize\sffamily\color{azul}]below:Dominio de análisis}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{Arquitectura del backend y fronteras de confianza.}
+\label{fig:arquitectura}
+\end{figure}
+
+El cliente obtiene un JWT mediante AUTH y lo utiliza para enviar una imagen a STEGO. Este último verifica localmente la firma y los atributos del token; posteriormente solicita a AUTH una decisión específica por acción. La comunicación interna utiliza HTTPS con una autoridad certificadora de desarrollo y autenticación del servicio mediante \code{x-service-token}. La clave privada de firma pertenece a AUTH, mientras que STEGO sólo dispone de la pública.
+
+\subsection{Independencia operativa}
+La separación se manifiesta en los servicios \code{auth}, \code{stego} y \code{auth-db} declarados en Compose. Se pueden detener y reiniciar las dos APIs por separado. STEGO requiere AUTH para autorizar operaciones protegidas; por tanto, independencia de despliegue no implica independencia funcional de la política de acceso. Si AUTH no puede responder, STEGO deniega la operación sin procesar el archivo.
+
+\begin{table}[H]
+\centering\small
+\caption{Distribución de responsabilidades.}
+\begin{tabularx}{\textwidth}{@{}P{2.4cm}Y Y@{}}
+\toprule
+\textbf{Componente} & \textbf{Responsabilidad} & \textbf{Persistencia y claves} \\ \midrule
+AUTH & Usuarios, roles, credenciales, JWT y decisión RBAC. & PostgreSQL; clave privada RSA; certificado TLS. \\
+STEGO & Validación de archivos, análisis LSB, clasificación y consulta de resultados. & SQLite; clave pública JWT; CA TLS. \\
+auth-db & Servicio de base de datos para AUTH. & Volumen PostgreSQL independiente. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Tecnologías de implementación}
+\begin{table}[H]
+\centering\small
+\caption{Tecnologías y finalidad técnica.}
+\begin{tabularx}{\textwidth}{@{}P{3.5cm}Y@{}}\toprule
+\textbf{Tecnología} & \textbf{Uso dentro del sistema}\\\midrule
+NestJS y TypeScript & Exposición de APIs, inyección de dependencias, servicios, controladores, guards y DTO.\\
+TypeORM y PostgreSQL & Persistencia relacional de identidades, índices, claves foráneas y asignaciones de roles.\\
+Argon2id & Derivación y verificación segura de contraseñas almacenadas.\\
+JWT RS256 & Firma asimétrica de credenciales de acceso y verificación con clave pública.\\
+Sharp y file-type & Decodificación de PNG y verificación del formato de archivo a partir de su contenido.\\
+SQLite y better-sqlite3 & Registro persistente de análisis en STEGO.\\
+Docker Compose & Construcción, inicialización, red de servicios y volúmenes persistentes.\\
+Swagger / OpenAPI & Descripción y exploración de las interfaces REST.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\section{Identidad y persistencia de AUTH}
+\subsection{Modelo entidad--relación}
+El modelo relacional utiliza tres entidades principales: \code{users}, \code{roles} y \code{user_roles}. La tabla intermedia materializa la relación N:M y dispone de dos claves foráneas y una restricción de unicidad sobre el par usuario--rol. El diseño permite que un usuario acumule varios roles y que un mismo rol se asigne a distintos usuarios.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[>=Latex,font=\small\sffamily]
+  \tikzset{entity/.style={draw=azul,thick,rounded corners=1mm,fill=grisclaro,text width=4.2cm,inner sep=2.5mm,align=left},joinbox/.style={draw=verde,thick,rounded corners=1mm,fill=verdeclaro,text width=4.3cm,inner sep=2.5mm,align=left}}
+  \node[entity] (u) at (0,2) {\textbf{USERS}\\\rule{4.1cm}{.3pt}\\\textbf{id} (PK)\\username (único)\\email (único)\\password (hash)\\estado; token\_version\\fechas de auditoría};
+  \node[joinbox] (ur) at (5.15,0) {\textbf{USER\_ROLES}\\\rule{4.2cm}{.3pt}\\\textbf{id} (PK)\\\textbf{user\_id} (FK)\\\textbf{role\_id} (FK)\\fecha de asignación\\UNIQUE(user\_id, role\_id)};
+  \node[entity] (r) at (10.25,2) {\textbf{ROLES}\\\rule{4.1cm}{.3pt}\\\textbf{id} (PK)\\rol (único)\\descripción\\estado\\fechas de auditoría};
+  \draw[-{Latex[length=2.5mm]},thick,azul] (u.south east) -- (ur.north west);
+  \draw[-{Latex[length=2.5mm]},thick,azul] (r.south west) -- (ur.north east);
+\end{tikzpicture}
+\caption{Modelo lógico N:M de usuarios y roles.}
+\label{fig:er}
+\end{figure}
+
+La entidad \code{User} incluye además campos de identificación y el contador \code{tokenVersion}. Las entidades \code{User} y \code{Role} conservan atributos de estado y borrado lógico para impedir que asignaciones a registros desactivados otorguen privilegios. \code{UserRole} incorpora índices por usuario y rol y una restricción única compuesta. La tabla \code{analyses} de STEGO no referencia directamente la base AUTH: guarda el UUID del solicitante como valor lógico.
+
+\subsection{Integridad y preparación de datos}
+Los servicios de dominio delegan la persistencia a repositorios TypeORM. Las validaciones de DTO reducen entradas malformadas, pero las restricciones únicas y las claves foráneas permanecen en la base de datos para conservar la integridad ante solicitudes concurrentes.
+
+El arranque inicial prepara los roles \code{ADMIN}, \code{ANALYST} y \code{USER} y la cuenta administrativa de demostración. El script \code{scripts/setup-demo.ps1} prepara las identidades y asignaciones empleadas en la batería de pruebas. La base de datos de AUTH se prepara con la migración inicial de TypeORM
+\code{auth/src/migrations/1793740000000-InitialIdentity.ts}. En la configuración publicada,
+\code{synchronize:false} y \code{migrationsRun:true} mantienen el esquema bajo control de esa migración antes de cargar los datos de demostración.
+
+\begin{notatecnica}
+\textbf{Comprobación de la relación N:M.} La demostración usa un usuario con roles \code{ANALYST} y \code{USER}, mientras que \code{USER} se asigna también a otra identidad. Un segundo intento de crear el mismo par usuario--rol produce HTTP 409 y no genera otra relación.
+\end{notatecnica}
+
+\section{Autenticación y autorización}
+\subsection{Contraseñas y proceso de inicio de sesión}
+Los registros de usuario almacenan un hash de contraseña calculado con Argon2id. En un inicio de sesión, AUTH localiza la identidad, obtiene el hash y utiliza \code{argon2.verify} para comprobar la contraseña sin recuperarla. La columna de hash no se selecciona normalmente en consultas de presentación. El acceso de login aplica una limitación de intentos.
+
+\subsection{Estructura y validación del JWT}
+El token firmado se estructura en tres segmentos codificados con Base64URL: \emph{header}, \emph{payload} y \emph{signature}. El payload utilizado incluye \code{sub}, \code{username}, \code{typ}, \code{tokenVersion} y atributos estándar de emisor, audiencia y vigencia. No contiene los roles como autoridad de permisos.
+
+\begin{table}[H]
+\centering\small
+\caption{Atributos del token y validaciones.}
+\begin{tabularx}{\textwidth}{@{}P{2.7cm}Y Y@{}}\toprule
+\textbf{Atributo} & \textbf{Finalidad} & \textbf{Control aplicado}\\\midrule
+\code{alg=RS256} & Especifica firma RSA con SHA-256. & Lista explícita de algoritmos permitidos.\\
+\code{sub} & Identifica al usuario autenticado. & Búsqueda de usuario activo en AUTH.\\
+\code{iss} & Identifica al emisor. & Comparación con emisor configurado.\\
+\code{aud} & Indica la audiencia esperada. & Comparación con audiencia configurada.\\
+\code{exp} & Fecha límite de validez. & Rechazo de tokens expirados.\\
+\code{typ} & Identifica el propósito del token. & Debe ser \code{access}.\\
+\code{tokenVersion} & Versión vigente de sesión. & Comparación con valor persistido en \code{users}.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\subsection{RS256 y distribución de claves}
+RS256 utiliza una clave privada para firmar y una clave pública para verificar. AUTH conserva la clave privada y expone a STEGO únicamente el material público necesario para validar la autenticidad. Esta disposición evita que STEGO tenga una credencial con la que pueda emitir nuevos JWT. La firma no cifra el contenido: los claims pueden leerse, pero una modificación no autorizada invalida la firma.
+
+Una firma válida tampoco prueba que la asignación de roles siga vigente. Para cada análisis o consulta de resultado, STEGO obtiene una nueva decisión de AUTH, que consulta las relaciones activas en PostgreSQL. Con esta separación, retirar \code{ANALYST} impide inmediatamente una nueva operación del usuario, aunque su JWT no haya vencido.
+
+\subsection{Política RBAC y propiedad de resultados}
+\begin{table}[H]
+\centering\small
+\caption{Matriz de roles y operaciones.}
+\begin{tabularx}{\textwidth}{@{}Y c c c@{}}\toprule
+\textbf{Operación} & \textbf{ADMIN} & \textbf{ANALYST} & \textbf{USER}\\\midrule
+Consultar perfil propio & Sí & Sí & Sí \\
+Crear y actualizar usuarios & Sí & No & No \\
+Crear y actualizar roles & Sí & No & No \\
+Asignar y retirar roles & Sí & No & No \\
+Analizar PNG & Sí & Sí & No \\
+Consultar resultado propio & Sí & Sí & No \\
+Consultar resultado ajeno & Sí & No & No \\
+\bottomrule\end{tabularx}
+\end{table}
+
+La verificación de un resultado incluye dos pasos: autorización general de la operación de lectura y comprobación de propiedad. En la implementación, un usuario autorizado puede consultar sus propios análisis y el rol \code{ADMIN} puede consultar también los de otros usuarios. El identificador del recurso no constituye permiso por sí mismo.
+
+\subsection{Revocación, cierre de sesión y respuestas}
+Retirar una asignación activa hace que la consulta posterior a AUTH carezca del permiso correspondiente: el JWT sigue siendo auténtico, pero STEGO devuelve HTTP 403. El cierre de sesión incrementa \code{tokenVersion} en AUTH; un JWT anterior conserva el valor previo y se rechaza con HTTP 401. Si AUTH no puede tomar una decisión válida, STEGO responde HTTP 503 y no analiza la imagen. La tabla \ref{tab:codigos} resume estos casos.
+
+\begin{table}[H]
+\centering\small
+\caption{Respuestas de seguridad y validación.}\label{tab:codigos}
+\begin{tabularx}{\textwidth}{@{}P{2.0cm}Y Y@{}}\toprule
+\textbf{HTTP} & \textbf{Condición} & \textbf{Efecto}\\\midrule
+401 & Token ausente, alterado, vencido o sesión revocada. & Se rechaza antes del análisis.\\
+403 & Identidad válida sin permiso o resultado ajeno. & Se deniega la operación solicitada.\\
+413 & Archivo demasiado grande. & No se procesa ni se persiste.\\
+415 & Formato, firma, extensión o MIME incompatibles. & Se rechaza la carga.\\
+422 & PNG corrupto o dimensiones no aceptadas. & Fallo controlado de decodificación.\\
+503 & AUTH inaccesible o decisión no verificable. & Denegación por defecto.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\section{Integración y comunicación entre microservicios}
+\subsection{Solicitud de autorización interna}
+STEGO invoca \code{POST /internal/authorization/check} por HTTPS, incluye una credencial de servicio en la cabecera \code{x-service-token} y envía el token del usuario junto con la acción solicitada. AUTH verifica la identidad del servicio llamante, revalida la sesión y obtiene los roles activos antes de responder. El mensaje también propaga \code{x-request-id} para enlazar los eventos de auditoría de ambas aplicaciones.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\small\sffamily,>=Latex]
+\foreach \name/\x in {Cliente/0,STEGO/4.4,AUTH/8.6,PostgreSQL/12.5}{
+  \node[draw=verde,fill=verdeclaro,rounded corners=1.5pt,minimum width=2.5cm,minimum height=.65cm] at (\x,0) (\name) {\name};
+  \draw[dashed,gris] (\x,-.42)--(\x,-6.05);
+}
+\draw[->,thick,azul] (0,-.85)--node[above,font=\scriptsize]{PNG + Bearer JWT}(4.4,-.85);
+\draw[->,thick,azul] (4.4,-1.6)--node[above,font=\scriptsize]{Verificación de firma}(4.4,-1.9);
+\draw[->,thick,azul] (4.4,-2.4)--node[above,font=\scriptsize]{HTTPS: acción + JWT + token servicio}(8.6,-2.4);
+\draw[->,thick,azul] (8.6,-3.2)--node[above,font=\scriptsize]{Roles activos y sesión}(12.5,-3.2);
+\draw[<-,thick,azul] (8.6,-3.75)--node[above,font=\scriptsize]{Estado actual}(12.5,-3.75);
+\draw[<-,thick,azul] (4.4,-4.45)--node[above,font=\scriptsize]{Decisión por acción}(8.6,-4.45);
+\draw[->,thick,verde] (4.4,-5.3)--node[above,font=\scriptsize]{Resultado o denegación}(0,-5.3);
+\end{tikzpicture}
+\caption{Secuencia de autenticación y decisión RBAC.}
+\end{figure}
+
+\subsection{Denegación por defecto}
+Los tiempos de espera, errores de red y respuestas internas sin el contrato esperado no otorgan permisos implícitos. Cuando la autoridad de autorización está ausente, el controlador de STEGO no llega a ejecutar la decodificación ni el análisis estadístico. Esta regla es observable en el escenario T08.
+
+\section{API REST y especificaciones OpenAPI}
+\subsection{Contrato de AUTH}
+La interfaz AUTH dispone de login y perfil, gestión administrativa y un endpoint de autorización destinado a STEGO. Los prefijos exactos utilizados en la configuración inspeccionada son \code{/api} para operaciones públicas y administrativas y la ruta \code{/internal/authorization/check} para comunicación interna.
+
+\begin{longtable}{@{}P{2.0cm}P{7.6cm}P{5.5cm}@{}}
+\caption{Operaciones principales de AUTH.}\label{tab:authapi}\\\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Acceso}\\\midrule\endfirsthead
+\toprule\textbf{Método}&\textbf{Ruta}&\textbf{Acceso}\\\midrule\endhead
+POST & \code{/api/auth/login} & Público; límite de intentos.\\
+GET & \code{/api/auth/profile} & JWT válido.\\
+POST & \code{/api/auth/logout} & JWT válido.\\
+POST, GET & \code{/api/users} & ADMIN.\\
+GET, PATCH & \code{/api/users/:id} & ADMIN.\\
+POST, GET & \code{/api/roles} & ADMIN.\\
+PATCH & \code{/api/roles/:id} & ADMIN.\\
+POST, GET & \code{/api/user-roles} & ADMIN.\\
+DELETE & \code{/api/user-roles/:id} & ADMIN.\\
+POST & \code{/internal/authorization/check} & STEGO autenticado.\\
+\bottomrule\end{longtable}
+
+\subsection{Contrato de STEGO}
+\begin{table}[H]
+\centering\small
+\caption{Operaciones principales de STEGO.}
+\begin{tabularx}{\textwidth}{@{}P{2cm}Y Y@{}}\toprule
+\textbf{Método} & \textbf{Ruta} & \textbf{Acceso y datos}\\\midrule
+POST & \code{/api/steganography/analyze} & ADMIN/ANALYST; \code{multipart/form-data}, campo \code{file}.\\
+GET & \code{/api/steganography/results/:id} & JWT, permiso vigente y validación de propiedad.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+La documentación interactiva se construye en cada aplicación con \code{SwaggerModule} y \code{DocumentBuilder}. Se incorporan dos contratos OpenAPI 3 en el directorio \code{openapi}: uno para AUTH y otro para STEGO. Ambos describen recursos, esquemas de solicitud y respuestas relevantes, y pueden contrastarse con la documentación Swagger de los servicios en ejecución.
+
+\subsection{Ejemplo de autenticación y análisis}
+\begin{codetext}
+POST https://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{"identity":"analyst","password":"<credencial_demo>"}
+
+POST http://localhost:3002/api/steganography/analyze
+Authorization: Bearer <JWT>
+Content-Type: multipart/form-data
+
+file=@samples/stego/lsb-random-payload.png
+\end{codetext}
+
+\section{Procesamiento y detección esteganográfica}
+\subsection{Admisión del archivo}
+El controlador recibe una única imagen en \code{multipart/form-data}. El límite de carga es de 5 MiB y el de decodificación es de 16 millones de píxeles. La verificación considera el tamaño, el MIME declarado, la extensión y la firma real del archivo. Sharp decodifica el contenido PNG y rechaza archivos corruptos o incompatibles. La autorización precede al análisis de píxeles.
+
+El soporte implementado en esta versión corresponde a PNG; no se afirma compatibilidad completa con BMP ni con otras técnicas. Los bytes de la imagen se utilizan durante el procesamiento y no se conservan como archivo de acceso público. La persistencia retiene metadatos, indicadores y huellas de integridad.
+
+\subsection{Extracción de indicadores LSB}
+Tras decodificar la imagen, el detector convierte los canales de color a una secuencia de $n$ bytes RGB. Para cada posición $i$ se extrae el bit menos significativo:
+\begin{equation}
+  b_i=x_i\mathbin{\&}1,\qquad b_i\in\{0,1\}.
+\end{equation}
+
+Se calculan la proporción de unos $p$, la tasa de transiciones consecutivas $t$ y el estadístico de chi-cuadrado respecto de un balance de referencia del 50\,\%:
+\begin{align}
+  p &= \frac{1}{n}\sum_{i=1}^{n}b_i,\\
+  t &= \frac{1}{n-1}\sum_{i=2}^{n}\mathbb{1}(b_i\neq b_{i-1}),\\
+  \chi^2 &=\frac{(o-n/2)^2}{n/2}+\frac{((n-o)-n/2)^2}{n/2},
+\end{align}
+con $o=\sum_i b_i$. El puntaje de anomalía combina la cercanía de $p$ y $t$ al valor $0.5$:
+\begin{equation}
+  s = \frac{\max(0,1-2|p-0.5|)+\max(0,1-2|t-0.5|)}{2}.
+\end{equation}
+
+\begin{notatecnica}
+El chi-cuadrado se registra como indicador complementario, pero no determina directamente la clasificación. Un puntaje cercano a 1 significa que las dos medidas se aproximan al patrón aleatorio esperado por esta heurística; \emph{no significa que exista una probabilidad del 100\,\% de esteganografía}.
+\end{notatecnica}
+
+\subsection{Criterios de clasificación y política}
+El sistema registra tres clases de resultado: \code{sin_indicios}, \code{no_concluyente} y \code{sospechoso}. Una falla técnica de admisión o procesamiento se expresa mediante el correspondiente error HTTP, sin insertar un análisis válido. La clasificación se determina mediante:
+\begin{equation}
+  C(s)=\begin{cases}
+    \text{sospechoso}, & s\geq 0.97,\\
+    \text{no\_concluyente}, & 0.85\leq s<0.97,\\
+    \text{sin\_indicios}, & s<0.85.
+  \end{cases}
+\end{equation}
+
+La política registrada es \code{cuarentena} para la clase sospechosa y \code{advertencia} en los demás casos. El valor \code{cuarentena} es una decisión almacenada en el registro; la implementación revisada no incluye un subsistema independiente de aislamiento físico del archivo.
+
+\subsection{Muestras y resultados experimentales}
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{.235\textwidth}\centering\includegraphics[width=\linewidth,height=3.35cm,keepaspectratio]{figuras/reference.png}\caption{Referencia}\end{subfigure}\hfill
+\begin{subfigure}[b]{.235\textwidth}\centering\includegraphics[width=\linewidth,height=3.35cm,keepaspectratio]{figuras/lsb-random-payload.png}\caption{LSB aleatorio}\end{subfigure}\hfill
+\begin{subfigure}[b]{.235\textwidth}\centering\includegraphics[width=\linewidth,height=3.35cm,keepaspectratio]{figuras/noisy-unmodified.png}\caption{Ruido normal}\end{subfigure}\hfill
+\begin{subfigure}[b]{.235\textwidth}\centering\includegraphics[width=\linewidth,height=3.35cm,keepaspectratio]{figuras/lsb-sparse-payload.png}\caption{LSB disperso}\end{subfigure}
+\caption{Muestras utilizadas para examinar resultados y límites de la heurística.}
+\end{figure}
+
+\begin{table}[H]
+\centering\small
+\caption{Resultados de las pruebas sobre muestras PNG.}\label{tab:muestras}
+\begin{tabularx}{\textwidth}{@{}P{3.45cm}P{2cm}P{3cm}Y@{}}\toprule
+\textbf{Muestra} & \textbf{Puntaje} & \textbf{Clase} & \textbf{Observación}\\\midrule
+Referencia & 0.000000 & sin\_indicios & Sin señal LSB para esta heurística.\\
+Carga LSB aleatoria & 0.997714 & sospechoso & Señal positiva esperada.\\
+Ruido sin modificar & ≈1 & sospechoso & Falso positivo observado.\\
+Carga LSB dispersa & ≈0.08 & sin\_indicios & Falso negativo observado.\\
+Patrón intermedio & ≈0.94 & no\_concluyente & Evidencia estadística intermedia.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=.91\linewidth,height=6.7cm,ymin=0,ymax=1.09,ytick={0,.25,.5,.75,1},ylabel={Puntaje de anomalía},symbolic x coords={Referencia,LSB,Dispersa,Intermedia,Ruido},xtick=data,x tick label style={rotate=25,anchor=east,font=\small},ymajorgrids=true,grid style={draw=linea},axis line style={draw=gris},tick style={draw=gris},bar width=13pt, enlarge x limits=.12]
+\addplot+[ybar,fill=verde,draw=verde] coordinates {(Referencia,0) (LSB,.997714) (Dispersa,.08) (Intermedia,.94) (Ruido,1)};
+\addplot[azul,thick,dashed,forget plot] coordinates {(Referencia,.97) (Ruido,.97)};
+\addplot[gris,thick,densely dashed,forget plot] coordinates {(Referencia,.85) (Ruido,.85)};
+\node[anchor=east,font=\scriptsize,fill=white] at (rel axis cs:.97,.90) {umbral: 0.97};
+\node[anchor=east,font=\scriptsize,fill=white] at (rel axis cs:.97,.78) {zona intermedia: 0.85};
+\end{axis}
+\end{tikzpicture}
+\caption{Puntajes registrados y umbrales de clasificación.}
+\end{figure}
+
+\subsection{Limitaciones del método}
+El análisis favorece patrones de bits con equilibrio y alternancia próximos a 0.5. Esto permite identificar ciertas cargas LSB aleatorias, pero las texturas naturales o el ruido pueden imitar esos indicadores, mientras que una carga dispersa o una técnica adaptativa puede no alterar suficientemente las métricas. El método tampoco detecta de manera general otros dominios de ocultamiento, como transformaciones de frecuencia o modificaciones fuera de los canales analizados. Los resultados constituyen alertas estadísticas sujetas a interpretación.
+
+\section{Persistencia de resultados y auditoría}
+\subsection{Registro de análisis en STEGO}
+La tabla \code{analyses} se gestiona con SQLite y conserva \code{id}, \code{user_id}, \code{filename}, \code{sha256}, \code{technique}, \code{status}, \code{indicators}, \code{action}, \code{limitations} y \code{created_at}. Los indicadores incluyen dimensiones, cantidad de muestras, proporción de bits uno, transiciones, chi-cuadrado y puntaje.
+
+El hash SHA-256 identifica los bytes exactos de la imagen procesada, pero no acredita que el contenido sea inocuo. El modo WAL y el volumen \code{stego_data} permiten conservar registros tras reiniciar STEGO. En los ensayos documentados, la cantidad permaneció en 12 antes y después del reinicio.
+
+\subsection{Bitácoras y correlación entre servicios}
+AUTH registra inicios de sesión válidos y fallidos, decisiones de autorización y eventos relevantes de sesión. STEGO registra denegaciones, indisponibilidad de AUTH, inicio y final de análisis, clasificación y puntaje. Los eventos se emiten como JSON e incluyen marca temporal e identificador de solicitud. El \code{requestId} enlaza una operación del cliente con su autorización interna.
+
+\begin{table}[H]
+\centering\small
+\caption{Campos principales de auditoría.}
+\begin{tabularx}{\textwidth}{@{}P{3.4cm}Y@{}}\toprule
+\textbf{Campo} & \textbf{Información registrada}\\\midrule
+\code{timestamp} & Fecha y hora del evento.\\
+\code{event} & Tipo de operación o decisión.\\
+\code{requestId} & Identificador de correlación entre servicios.\\
+\code{userId} & Identidad relacionada, cuando existe.\\
+\code{action}, \code{allowed} & Operación autorizada o denegada.\\
+\code{analysisId}, \code{status} & Resultado de la tarea de STEGO.\\
+\bottomrule\end{tabularx}
+\end{table}
+
+Los logs se inspeccionan mediante \code{docker compose logs}. Los eventos de auditoría no necesitan reproducir contraseñas, claves o JWT completos para explicar cada decisión. La conservación centralizada y resistente a alteraciones queda fuera del alcance de esta versión.
+
+\section{Análisis de riesgos y controles}
+\subsection{Criterio de valoración}
+La matriz emplea una valoración cualitativa de probabilidad e impacto (bajo, medio y alto). El nivel de riesgo resume la exposición inicial; el riesgo residual considera los controles existentes y las limitaciones de la demostración. La matriz se vincula con los activos del backend, no con capacidades aún no construidas.
+
+\begin{landscape}
+\scriptsize\setlength{\tabcolsep}{3pt}\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}P{2.45cm}P{3.15cm}P{3.7cm}P{1.7cm}P{1.7cm}P{1.8cm}P{5.5cm}P{3.15cm}@{}}
+\caption{Matriz de activos, amenazas, vulnerabilidades, riesgos y controles.}\label{tab:riesgos}\\
+\toprule
+\textbf{Activo} & \textbf{Amenaza} & \textbf{Vulnerabilidad o condición} & \textbf{Impacto} & \textbf{Prob.} & \textbf{Riesgo} & \textbf{Control / tratamiento} & \textbf{Residual / evidencia}\\\midrule
+\endfirsthead
+\toprule\textbf{Activo}&\textbf{Amenaza}&\textbf{Vulnerabilidad o condición}&\textbf{Impacto}&\textbf{Prob.}&\textbf{Riesgo}&\textbf{Control / tratamiento}&\textbf{Residual / evidencia}\\\midrule\endhead
+Credenciales & Fuerza bruta & Intentos repetidos de acceso & Alto & Media & Alto & Argon2id, respuesta genérica y límite de login. & Medio; T02.\\
+Base de identidad & Exposición de hashes & Filtración de base de datos & Alto & Baja & Medio & Hash Argon2id, exclusión del campo en consultas normales. & Medio; entidades AUTH.\\
+JWT & Falsificación de identidad & Alteración de claims o algoritmo & Alto & Media & Alto & RS256, firma, algoritmo fijo, issuer, audience y expiración. & Bajo; T03 y variantes.\\
+Clave privada RSA & Emisión ilegítima de tokens & Compromiso del material de firma & Alto & Baja & Alto & Clave privada sólo en AUTH; separación de montajes. & Medio; Compose.\\
+Sesiones & Reutilización tras logout & Token válido hasta caducar & Alto & Media & Alto & Versionado de sesión y rechazo de token antiguo. & Bajo; logout 401.\\
+Roles & Elevación de privilegios & Confiar en permisos desactualizados & Alto & Media & Alto & Consulta dinámica a PostgreSQL por operación. & Bajo; T07.\\
+Relación N:M & Permisos inconsistentes & Duplicación de asignaciones & Medio & Media & Medio & FK e índice UNIQUE(user\_id,role\_id). & Bajo; T05--T06.\\
+API de resultados & Acceso horizontal & Uso de identificador ajeno & Alto & Media & Alto & RBAC y comprobación de propietario/ADMIN. & Bajo; T11.\\
+Canal interno & Suplantación de STEGO & Credencial de servicio comprometida & Alto & Baja & Medio & HTTPS con CA y cabecera de identidad del servicio. & Medio; sin mTLS.\\
+Disponibilidad AUTH & Interrupción de autorización & Dependencia operativa de STEGO & Alto & Media & Alto & Timeout y fallo cerrado sin procesamiento. & Medio; T08.\\
+Entrada PNG & Archivo disfrazado & Confiar sólo en extensión o MIME & Alto & Media & Alto & Comprobación de firma, tipo y decodificación estricta. & Bajo; T10.\\
+Recursos de STEGO & Agotamiento de memoria & Carga grande o dimensiones extremas & Alto & Media & Alto & Límites de 5 MiB, 16 Mpx y un archivo. & Bajo/medio; T10.\\
+Logs & Pérdida de trazabilidad & Ausencia de correlación & Medio & Media & Medio & Auditoría JSON y Request ID compartido. & Bajo; T12.\\
+Dependencias & Explotación de paquete vulnerable & Vulnerabilidades de terceros & Alto & Media & Alto & Seguimiento de auditoría de dependencias y actualización controlada. & Medio; npm audit.\\
+Detector LSB & Falso positivo & Ruido legítimo con patrón aleatorio & Medio & Media & Medio & Clasificación indicativa y revisión del resultado. & Medio; muestra ruido.\\
+Detector LSB & Falso negativo & Inserción dispersa/adaptativa & Alto & Media & Alto & Declaración de alcance; corpus de prueba complementario. & Alto; muestra dispersa.\\
+\bottomrule
+\end{longtable}
+\end{landscape}
+\normalsize
+
+\subsection{Enfoques y normas de referencia}
+\textbf{Zero Trust.} Las fronteras de confianza de la figura \ref{fig:arquitectura} requieren verificar la identidad del sujeto, la identidad del servicio llamante y el permiso actual de cada operación. Un JWT auténtico no constituye autorización permanente.
+
+\textbf{Secure by Design.} La separación de claves, los permisos mínimos, la validación del contenido y la denegación ante fallos están incorporados al flujo principal, en lugar de quedar como funciones optativas.
+
+\textbf{Shift Left Security.} Los controles se comprueban desde la implementación mediante pruebas unitarias, funcionales y negativas ejecutables; los casos adversos incluyen tokens alterados, archivos malformados y fallas de comunicación.
+
+Los controles se relacionan con la gestión sistemática de riesgos de seguridad de la información descrita por ISO/IEC 27001:2022 y con los conceptos de seguridad de aplicaciones de ISO/IEC 27034-1:2011. El sistema aplica prácticas técnicas pertinentes a esos marcos, sin que ello constituya certificación ni una evaluación formal de conformidad.
+
+\section{Pruebas, resultados y evidencia reproducible}
+\subsection{Batería oficial T01--T12}
+Los escenarios se identifican con la numeración definida en la especificación del Proyecto Integrador. Los resultados consignados corresponden a la evidencia de ejecución reunida durante el desarrollo y a los scripts del proyecto.
+
+\begin{longtable}{@{}P{1.05cm}P{4.7cm}P{4.7cm}P{4.25cm}@{}}
+\caption{Escenarios mínimos, resultados registrados y forma de verificación.}\label{tab:tests}\\
+\toprule\textbf{ID}&\textbf{Escenario}&\textbf{Resultado registrado}&\textbf{Verificación}\\\midrule\endfirsthead
+\toprule\textbf{ID}&\textbf{Escenario}&\textbf{Resultado registrado}&\textbf{Verificación}\\\midrule\endhead
+T01 & Iniciar y detener AUTH y STEGO separadamente. & Dos procesos e interfaces independientes; infraestructura separada. & \code{test-independence.ps1}\\
+T02 & Credenciales válidas e inválidas. & Emisión de JWT y rechazo de contraseña incorrecta. & \code{test-core-security.ps1}\\
+T03 & Token ausente, manipulado o vencido. & HTTP 401 en todos los casos. & \code{test-core-security.ps1}; JWT especiales.\\
+T04 & USER intenta analizar PNG. & HTTP 403, sin privilegio ANALYST/ADMIN. & \code{test-core-security.ps1}\\
+T05 & Usuario con dos roles; un rol en dos usuarios. & Asignaciones N:M persistidas. & Consulta JOIN y Postman.\\
+T06 & Repetir asignación usuario--rol. & HTTP 409; asociación única. & \code{test-core-security.ps1}\\
+T07 & Retirar rol y reutilizar JWT vigente. & Análisis previo permitido; siguiente HTTP 403. & Revocación y mismo JWT.\\
+T08 & Interrumpir AUTH. & STEGO HTTP 503; no ejecuta análisis. & \code{test-fail-closed.ps1}\\
+T09 & Imagen original e imagen con LSB. & Puntajes 0 y 0.997714; clases distintas. & \code{test-detector.ps1}\\
+T10 & Archivo grande, corrupto o formato falso. & 413, 422, 422, 415 y 415; registros sin cambio. & \code{test-t10.ps1}\\
+T11 & Consultar resultado de otra identidad. & HTTP 403. & \code{test-core-security.ps1}\\
+T12 & Correlacionar bitácoras de accesos y análisis. & Eventos JSON y Request ID. & Logs AUTH/STEGO.\\
+\bottomrule\end{longtable}
+
+\subsection{Pruebas adicionales de tokens}
+Se ejercitaron modificaciones de \code{username}, \code{sub} y roles ficticios, así como emisor incorrecto, audiencia incorrecta, token vencido y encabezado con \code{alg=none}. Todas las variantes fueron denegadas con HTTP 401. La causa se distingue entre firma inválida, claims inválidos, algoritmo inadmisible y sesión revocada, según corresponda. La batería local puede ejecutarse con \code{scripts/test-jwt-special.ps1}.
+
+\subsection{Validación de carga y consistencia}
+En T10 se observaron cinco respuestas para entradas incompatibles: tamaño superior a 5 MiB (413), PNG truncado (422), 25 millones de píxeles (422), GIF (415) y JPEG con extensión PNG (415). El número de análisis persistidos permaneció sin incrementarse tras esos rechazos. La prueba de reinicio de STEGO mantuvo 12 registros antes y después.
+
+\subsection{Pruebas unitarias e integración}
+El proyecto dispone de pruebas automatizadas con Jest para AUTH y Vitest para STEGO, además de scripts de extremo a extremo y de integración mediante peticiones reales. Los reportes del equipo registran compilaciones exitosas y ejecución satisfactoria de las pruebas. La colección Postman permite comprobar solicitudes HTTP con identidades y roles diferentes, y las muestras PNG reproducen las condiciones evaluadas por el detector.
+
+\section{Instalación y puesta en marcha}
+\subsection{Requisitos y estructura de entrega}
+Se requiere Docker Desktop con Compose, PowerShell compatible con los scripts y OpenSSL para crear material criptográfico de desarrollo. El repositorio incorpora dos directorios de aplicación, archivos de dependencias, Dockerfiles, ejemplos de variables de entorno, migración de identidad, scripts de preparación, colección Postman y muestras PNG. El código fuente se conserva en \url{https://github.com/Dval05/DES-SW-SEGURO-36902-DDE}, bajo la ruta \code{Unidad 1/Proyecto/Codigo}.
+
+\begin{codetext}
+Codigo/
+  auth/                 # API de identidad
+  stego/                # API de analisis
+  scripts/              # preparacion y pruebas
+  samples/              # imagenes de ensayo
+  docker-compose.yml
+  postman_collection.json
+  postman_environment.json
+  README.md
+  auth/.env.example
+  stego/.env.example
+\end{codetext}
+
+\subsection{Secuencia de arranque}
+Desde la carpeta \code{Codigo}, con Docker Desktop iniciado, el script \code{scripts/start-demo.ps1}
+realiza la preparación de material de desarrollo, verifica Docker Compose, construye las imágenes, inicia los servicios y crea las cuentas de demostración. El mismo proceso puede ejecutarse paso a paso:
+\begin{codetext}
+.\scripts\generate-secrets.ps1
+docker compose up -d --build
+docker compose ps
+.\scripts\setup-demo.ps1
+\end{codetext}
+
+El generador conserva el par de claves y los certificados existentes. El script de demostración debe ejecutarse después de que AUTH esté operativo. Se puede comprobar cada aplicación desde su API y revisar el estado de los tres servicios mediante Compose.
+
+\subsection{Prueba manual de los servicios}
+AUTH utiliza HTTPS en el puerto local 3001 y STEGO expone HTTP de desarrollo en el 3002. El login recibe una identidad y contraseña en la ruta \code{/api/auth/login}; después, STEGO recibe el JWT como credencial Bearer. Para analizar una imagen se usa un formulario multipart con el campo \code{file}. Swagger queda disponible al iniciar las aplicaciones.
+
+\subsection{Persistencia y operación}
+Los volúmenes \code{auth_data} y \code{stego_data} conservan PostgreSQL y SQLite respectivamente al reiniciar contenedores. Para ejecutar T08 se puede detener temporalmente AUTH, repetir una solicitud protegida y restaurar el servicio. El cierre del entorno con \code{docker compose down} no borra por sí mismo esos volúmenes.
+
+\begin{codetext}
+.\scripts\test-core-security.ps1
+.\scripts\test-jwt-special.ps1
+.\scripts\test-t10.ps1
+.\scripts\test-detector.ps1
+.\scripts\test-independence.ps1
+.\scripts\test-fail-closed.ps1
+\end{codetext}
+
+\section{Discusión y limitaciones}
+El proyecto satisface la separación de responsabilidades exigida para el Backend V1. La validación de identidad y la comprobación dinámica de permisos producen resultados distintos ante tokens inválidos y roles insuficientes. Los escenarios de revocación y caída de AUTH permiten verificar que la autorización no depende exclusivamente del contenido del JWT.
+
+El detector procesa realmente los píxeles y calcula métricas reproducibles, pero su alcance es heurístico: ruido legítimo puede resultar sospechoso y una carga LSB dispersa puede pasar inadvertida. La decisión de cuarentena se registra como política; no sustituye un servicio de aislamiento. La implementación está orientada a ejecución académica local. La migración inicial versionada satisface la preparación del esquema requerida en esta entrega. Una operación distribuida sostenida exigiría, adicionalmente, terminación HTTPS externa en STEGO, respaldos y retención duradera de auditoría, así como una evaluación más amplia del método estadístico.
+
+\section{Conclusiones}
+\begin{enumerate}
+\item Se implementó una arquitectura de dos microservicios con responsabilidades separadas, configuraciones independientes y persistencia específica para identidad y análisis de imágenes.
+\item AUTH distingue autenticación de autorización: la firma RS256 acredita el origen del JWT y la política RBAC depende de asignaciones activas en PostgreSQL, lo que permite que una revocación se refleje sin esperar a que expire el token.
+\item STEGO incorpora controles de tipo, tamaño y decodificación antes de registrar un análisis estadístico real basado en LSB; sus resultados incluyen métricas, clasificación y limitaciones.
+\item La batería T01--T12 y las pruebas adversas permiten evaluar el funcionamiento, la integridad de las relaciones, el fallo cerrado, el aislamiento de resultados y la trazabilidad.
+\item Los resultados muestran tanto la utilidad de una detección indicativa como sus límites frente al ruido natural y las cargas poco densas, lo que evita interpretar las alertas como conclusiones forenses.
+\end{enumerate}
+
+\section*{Referencias}
+\addcontentsline{toc}{section}{Referencias}
+\begin{enumerate}[label={[\arabic*]},leftmargin=2em,itemsep=4pt]
+\item Departamento de Ciencias de la Computación. \emph{Proyecto Integrador del Primer Parcial: Backend -- Autenticación JWT/RBAC y detección de esteganografía}. Desarrollo de Software Seguro, 2026.
+\item ISO/IEC. \emph{ISO/IEC 27001:2022. Information security management systems -- Requirements}. \url{https://www.iso.org/standard/27001}.
+\item ISO/IEC. \emph{ISO/IEC 27034-1:2011. Application security -- Overview and concepts}. \url{https://www.iso.org/standard/44378.html}.
+\item OWASP Foundation. \emph{Application Security Verification Standard, versión 5.0.0}. \href{https://asvs.owasp.org/}{ASVS}.
+\item OWASP Foundation. \emph{File Upload Cheat Sheet}. \href{https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html}{OWASP Cheat Sheet Series}.
+\item Jones, M.; Bradley, J.; Sakimura, N. \emph{JSON Web Token (JWT)}, RFC 7519, 2015. \url{https://www.rfc-editor.org/rfc/rfc7519}.
+\item Sheffer, Y.; Hardt, D.; Jones, M. \emph{JSON Web Token Best Current Practices}, RFC 8725, 2020. \url{https://www.rfc-editor.org/rfc/rfc8725}.
+\item Rose, S.; Borchert, O.; Mitchell, S.; Connelly, S. \emph{Zero Trust Architecture}, NIST SP 800-207, 2020. \url{https://doi.org/10.6028/NIST.SP.800-207}.
+\end{enumerate}
+
+\appendix
+\section{Resumen de archivos del proyecto}
+\begin{table}[H]\centering\small\caption{Ubicación de componentes relevantes.}
+\begin{tabularx}{\textwidth}{@{}P{6.9cm}Y@{}}\toprule
+\textbf{Archivo / carpeta} & \textbf{Responsabilidad}\\\midrule
+\code{auth/src/auth/auth.service.ts} & Login, emisión de JWT, validación de sesión, logout y autorización.\\
+\code{auth/src/auth/roles.guard.ts} & Comprobación de roles en operaciones administrativas.\\
+\code{auth/src/migrations/} & Migración inicial versionada de las tablas y restricciones de AUTH.\\
+\code{auth/src/users/} & Modelo, servicios, DTO y endpoints de usuarios.\\
+\code{auth/src/roles/} & Gestión y persistencia de roles.\\
+\code{auth/src/user-roles/} & Relaciones N:M y restricción de unicidad.\\
+\code{stego/src/steganography/subject.guard.ts} & Validación local del Bearer JWT.\\
+\code{stego/src/steganography/stego.service.ts} & Consulta AUTH, detector LSB y SQLite.\\
+\code{stego/src/steganography/stego.controller.ts} & Recepción multipart y consulta de análisis.\\
+\code{scripts/} & Configuración de demostración y pruebas repetibles.\\
+\code{samples/} & Imágenes originales y modificadas.\\
+\code{openapi/*.openapi.yaml} & Contratos REST incluidos con el informe.\\
+\bottomrule\end{tabularx}\end{table}
+
+\section{Lista de comprobación para la sustentación}
+\begin{enumerate}
+\item Iniciar la infraestructura y verificar AUTH y STEGO como APIs separadas.
+\item Crear o visualizar un usuario con dos roles y un rol asignado a dos usuarios.
+\item Realizar login, inspeccionar el JWT y confirmar que no incluye permisos como fuente de autoridad.
+\item Analizar una muestra válida con ADMIN o ANALYST; repetir con USER y comprobar HTTP 403.
+\item Repetir sin JWT o con token alterado y comprobar HTTP 401.
+\item Revocar ANALYST y repetir con el mismo JWT para obtener HTTP 403.
+\item Interrumpir temporalmente AUTH y verificar HTTP 503 en STEGO sin procesamiento.
+\item Comparar la imagen de referencia con una carga LSB y explicar las métricas, falsos positivos y falsos negativos.
+\item Consultar SQLite, el recurso protegido y los logs de auditoría de ambos servicios.
+\end{enumerate}
+
+\end{document}

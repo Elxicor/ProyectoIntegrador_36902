@@ -1,0 +1,29 @@
+REGISTRO DE RESULTADOS COMUNICADOS — EJECUCIÓN LOCAL ANTERIOR
+Fecha de referencia: 3 de noviembre de 2026.
+Entorno reportado: Windows/WSL2, Docker 29.1.3, Compose 5.0.1, Node 24.22.
+
+Este registro describe las comprobaciones realizadas sobre una versión previa
+al paquete de distribución. Para evaluar esta entrega, se deben ejecutar de nuevo
+los comandos del README y conservar los resultados de esa instalación.
+
+T01: AUTH y STEGO en contenedores independientes; parada y reinicio por separado.
+T02: credencial válida emite JWT; contraseña incorrecta devuelve 401.
+T03: token ausente, alterado o vencido devuelve 401.
+T04: USER intentando analizar imagen recibe 403.
+T05: ANALYST posee ANALYST y USER; USER se comparte entre analyst y user.
+T06: duplicado de asignación usuario-rol devuelve 409.
+T07: mismo JWT tras revocar ANALYST devuelve 403.
+T08: AUTH detenido y STEGO activo: respuesta 503 sin análisis.
+T09: referencia sin indicios (score 0) y PNG LSB sospechoso (score 0.997714).
+T10: tamaño excesivo 413, truncado 422, 25 Mpx 422, GIF 415 y JPEG renombrado 415.
+T11: un usuario ANALYST intenta consultar un análisis ajeno y obtiene 403.
+T12: registros JSON de autenticación, decisión, análisis y requestId.
+
+Persistencia reportada: 12 análisis antes y 12 después de reiniciar STEGO.
+Limitaciones: falso positivo en una imagen de ruido, falso negativo con carga
+LSB dispersa y una muestra no concluyente (score alrededor de 0.94).
+
+Obtener evidencia nueva en una instalación limpia:
+  powershell: .\scripts\test-all.ps1
+  auditoría: docker compose logs --tail 250 auth stego
+  estado:   docker compose ps

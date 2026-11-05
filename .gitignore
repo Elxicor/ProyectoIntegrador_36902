@@ -1,0 +1,14 @@
+# Instalaciones y artefactos generados
+**/node_modules/
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+**/.env
+.env
+secrets/
+stego/data/
+tmp/
+*.log
+.DS_Store
+.vscode/
+.idea/
